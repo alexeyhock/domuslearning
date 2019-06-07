@@ -1,11 +1,8 @@
-trigger OrderTrigger on Order (before insert, before update) {
+trigger OrderTrigger on Order (before insert) {
 
     if(Trigger.isBefore) {
         if(Trigger.isInsert) {
-            OrderPriceBookAsign.HandlerBeforeInsert(Trigger.new);
-        }
-        if(Trigger.isUpdate) {
-            OrderPriceBookAsign.HandlerBeforeUpdate(Trigger.new);
+            OrderPriceBookAssign.assignPriceBookToOrder(Trigger.new);
         }
     }
 
