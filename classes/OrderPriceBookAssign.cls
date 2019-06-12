@@ -1,4 +1,6 @@
-public with sharing class OrderPriceBookAssign {
+public without sharing class OrderPriceBookAssign {
+
+    public static Boolean isFirstTime = true;
 
     public static RecordType TYPE_STANDARD = [SELECT Id, Name FROM RecordType WHERE Name = 'Standard' LIMIT 1];
     public static RecordType TYPE_TRIAL = [SELECT Id, Name FROM RecordType WHERE Name = 'Trial' LIMIT 1];
@@ -49,4 +51,25 @@ public with sharing class OrderPriceBookAssign {
          }
      }
 
-}
+
+    public static void assignOrderItem(List<Order> orders) {
+        for (Order ord : orders) {
+            if (ord.ProductPackage__c != null) {
+                ProductPackage__c ppi = [
+                        SELECT Id, Name, (
+                                SELECT Id, Name, Product__r.Id, Product__r.Name
+                                FROM Product_Package_Items__r
+                        )
+                        FROM ProductPackage__c
+                        WHERE Id =: ord.ProductPackage__c
+                ];
+
+                Orderitem oitem = new Orderitem();
+                oitem.OrderId = ord.id;
+                oitem.Quantity = 1;
+                oitem.UnitPrice = 200;
+                oitem.PricebookEntryId = '01u4P00000t9ty2QAA';
+                insert oitem;
+            }
+        }
+    }
