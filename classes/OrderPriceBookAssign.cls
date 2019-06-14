@@ -1,30 +1,26 @@
 public without sharing class OrderPriceBookAssign {
 
     public static Boolean isFirstTime = true;
+    //public static RecordType TYPE_STANDARD = [SELECT Id, Name FROM RecordType WHERE Name = 'Standard' LIMIT 1];
+    //public static RecordType TYPE_TRIAL = [SELECT Id, Name FROM RecordType WHERE Name = 'Trial' LIMIT 1];
 
-    public static RecordType TYPE_STANDARD = [SELECT Id, Name FROM RecordType WHERE Name = 'Standard' LIMIT 1];
-    public static RecordType TYPE_TRIAL = [SELECT Id, Name FROM RecordType WHERE Name = 'Trial' LIMIT 1];
-    public static List<PriceBookName__mdt> pbName = [SELECT Label FROM PriceBookName__mdt];
-    public static Map<String, Id> priceBook2 = new Map<String, Id>();
+    public static Map<Id, RecordType> recordTypesByIds = new Map<Id, RecordType>([SELECT Id, Name FROM RecordType]);
+
+    public static List<PriceBookName__mdt> priceBookNames = [SELECT Label FROM PriceBookName__mdt];
+    public static Map<String, Pricebook2> priceBook2Map = new Map<String, Pricebook2>();
 
     public static void assignPriceBookToOrder(List<Order> orders) {
         for (Order ord : orders) {
-            if (ord.RecordTypeId == TYPE_STANDARD.Id) {
-                ord.Pricebook2Id = getPriceBookId(TYPE_STANDARD);
-            }
-            if (ord.RecordTypeId == TYPE_TRIAL.Id) {
-                ord.Pricebook2Id = getPriceBookId(TYPE_TRIAL);
-            }
+            ord.Pricebook2Id = getPriceBookId(recordTypesByIds.get(ord.RecordTypeId));
         }
     }
 
     public static Id getPriceBookId(RecordType orderRecordType) {
         buildPriceBookMap();
         if(orderRecordType == null) return null;
-        System.debug(pbName.size());
-        for (Integer i = 0; i < pbName.size(); i++) {
-            if(pbName[i].Label.contains(orderRecordType.Name) == true) {
-                return  priceBook2.get(pbName[i].Label);
+        for (Integer i = 0; i < priceBookNames.size(); i++) {
+            if (priceBookNames[i].Label.contains(orderRecordType.Name)) {
+                return  priceBook2Map.get(priceBookNames[i].Label).Id;
             }
         }
         return null;
@@ -33,8 +29,9 @@ public without sharing class OrderPriceBookAssign {
     public static void checkCorrectOrderItems(Map<Id, OrderItem> mapOrderItem) {
         List<OrderItem> orderItems = getOrderItems(mapOrderItem.keySet());
         for (OrderItem orIt : orderItems) {
-            if (orIt.Order.RecordTypeId == TYPE_TRIAL.Id && orIt.UnitPrice > 0) {
-                orIt.addError('Price can\'t be more than 0 in trial order');
+            System.debug(orIt.Order.RecordTypeId);
+            if (recordTypesByIds.get(orIt.Order.RecordTypeId).Name == 'Trial' && orIt.UnitPrice > 0) {
+                orIt.UnitPrice.addError('Price can\'t be more than 0 in trial order');
             }
         }
     }
@@ -46,30 +43,42 @@ public without sharing class OrderPriceBookAssign {
 
 
      public static void buildPriceBookMap() {
-         for (Pricebook2 pb : [SELECT Id, Name FROM Pricebook2]) {
-             priceBook2.put(pb.Name, pb.Id);
+         for (Pricebook2 pb : [SELECT Id, Name, (SELECT Id, Name, UnitPrice FROM PricebookEntries) FROM Pricebook2]) {
+             priceBook2Map.put(pb.Name, pb);
          }
      }
 
+     public static void addPackageProducts(List<Order> orders) {
+         List<OrderItem> oi = new List<OrderItem>();
+         for (Order ord : orders) {
+             Pricebook2 prBook = priceBook2Map.get(getPriceBookEntryName(ord));
+             if (ord.ProductPackage__c != null) {
+                for(Integer i = 0; i < prBook.PricebookEntries.size(); i++) {
+                    OrderItem oItem = new OrderItem();
+                    oItem.OrderId = ord.id;
+                    oItem.Quantity = 1;
+                    oItem.UnitPrice = prBook.PricebookEntries[i].UnitPrice;
+                    oItem.PricebookEntryId = prBook.PricebookEntries[i].Id;
+                    oi.add(oItem);
+                }
+            }
+         }
+         insert oi;
+    }
 
-    public static void assignOrderItem(List<Order> orders) {
-        for (Order ord : orders) {
-            if (ord.ProductPackage__c != null) {
-                ProductPackage__c ppi = [
-                        SELECT Id, Name, (
-                                SELECT Id, Name, Product__r.Id, Product__r.Name
-                                FROM Product_Package_Items__r
-                        )
-                        FROM ProductPackage__c
-                        WHERE Id =: ord.ProductPackage__c
-                ];
-
-                Orderitem oitem = new Orderitem();
-                oitem.OrderId = ord.id;
-                oitem.Quantity = 1;
-                oitem.UnitPrice = 200;
-                oitem.PricebookEntryId = '01u4P00000t9ty2QAA';
-                insert oitem;
+    public static String getPriceBookEntryName(Order ord) {
+        String result = '';
+        String str = recordTypesByIds.get(ord.RecordTypeId).Name;
+        for (Integer i = 0; i < priceBookNames.size(); i++) {
+            if (priceBookNames[i].Label.contains(str)) {
+                result = priceBook2Map.get(priceBookNames[i].Label).Name;
             }
         }
+        return result;
+
     }
+}
+
+
+
+

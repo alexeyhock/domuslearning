@@ -1,19 +1,14 @@
-trigger OrderTrigger on Order (before insert) {
-
-    if(Trigger.isBefore) {
-        if(Trigger.isInsert) {
-
-                OrderPriceBookAssign.assignPriceBookToOrder(Trigger.new);
-
-        }
+trigger OrderTrigger on Order (before insert, after insert) {
+    if (Trigger.isBefore && Trigger.isInsert) {
+        OrderPriceBookAssign.assignPriceBookToOrder(Trigger.new);
     }
-
-    if(Trigger.isAfter && Trigger.isInsert) {
+    if (Trigger.isAfter && Trigger.isInsert) {
         if (OrderPriceBookAssign.isFirstTime) {
             OrderPriceBookAssign.isFirstTime = false;
-            OrderPriceBookAssign.assignOrderItem(Trigger.new);
+            OrderPriceBookAssign.addPackageProducts(Trigger.new);
         }
     }
+}
 
 //    list<Orderitem> lineitems = new list<Orderitem>();
 //    for (Order o : trigger.new){

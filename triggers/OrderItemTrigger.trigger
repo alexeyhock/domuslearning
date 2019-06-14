@@ -1,9 +1,6 @@
 trigger OrderItemTrigger on OrderItem (after insert) {
-
-    if(Trigger.isAfter) {
-        if(Trigger.isInsert) {
-            OrderPriceBookAssign.checkCorrectOrderItems(Trigger.newMap);
-        }
+    if(Trigger.isAfter && Trigger.isInsert) {
+        OrderPriceBookAssign.checkCorrectOrderItems(Trigger.newMap);
     }
 
 }
