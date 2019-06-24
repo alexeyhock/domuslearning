@@ -1,28 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
-        <members>*</members>
+        <members>OrderPriceBookAssign</members>
         <name>ApexClass</name>
     </types>
     <types>
-        <members>*</members>
-        <name>ApexComponent</name>
-    </types>
-    <types>
-        <members>*</members>
-        <name>ApexPage</name>
-    </types>
-    <types>
-        <members>*</members>
+        <members>OrderItemTrigger</members>
+        <members>OrderTrigger</members>
         <name>ApexTrigger</name>
     </types>
     <types>
-        <members>*</members>
-        <name>AuraDefinitionBundle</name>
+        <members>PriceBookName.Standard_Price_Book</members>
+        <members>PriceBookName.Trial_Price_Book</members>
+        <name>CustomMetadata</name>
     </types>
     <types>
-        <members>*</members>
-        <name>StaticResource</name>
+        <members>Order</members>
+        <members>OrderItem</members>
+        <members>Pricebook2</members>
+        <members>Product2</members>
+        <members>ProductPackageItem__c</members>
+        <members>ProductPackage__c</members>
+        <name>CustomObject</name>
+    </types>
+    <types>
+        <members>Order.Standard</members>
+        <members>Order.Trial</members>
+        <name>RecordType</name>
     </types>
     <version>45.0</version>
 </Package>

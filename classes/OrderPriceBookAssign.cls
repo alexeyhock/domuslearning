@@ -36,7 +36,6 @@ public without sharing class OrderPriceBookAssign {
         }
     }
 
-
     //ASSIGN PRICEBOOK TO ORDER
     public static void assignPriceBookToOrder(List<Order> orders) {
         for (Order ord : orders) {
@@ -69,6 +68,7 @@ public without sharing class OrderPriceBookAssign {
     }
 
     public static void addPackageProducts(List<Order> orders) {
+        buildPriceBook2Map();
         buildPriceBookEntriesMap();
         buildProductPackageItemMap(getListProductPackageIds(orders));
 
@@ -91,7 +91,7 @@ public without sharing class OrderPriceBookAssign {
         insert oi;
     }
 
-    public static Map<String, PricebookEntry> buildItemsPriceBookMap(Pricebook2 pb){
+    public static Map<String, PricebookEntry> buildItemsPriceBookMap(Pricebook2 pb) {
         Map<String, PricebookEntry> mapItems = new Map<String, PricebookEntry>();
         for(PricebookEntry pbe : pb.PricebookEntries) mapItems.put(pbe.Name, pbe);
         return mapItems;
