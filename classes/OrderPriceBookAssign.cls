@@ -8,13 +8,13 @@ public without sharing class OrderPriceBookAssign {
 
     public static Map<String, Pricebook2> priceBook2Map = new Map<String, Pricebook2>();
 
+    public static Map<String, Pricebook2> priceBook2MapKeyId = new Map<String, Pricebook2>([SELECT Id, Name, (SELECT Id, Name, UnitPrice FROM PricebookEntries) FROM Pricebook2]);
+
     public static Map<String, PricebookEntry> priceBookEntriesMap = new Map<String, PricebookEntry>();
 
-    //public static Map<Id, PricebookEntry> priceBookEntriesMap2 = new Map<Id, PricebookEntry>([SELECT Id, Name, UnitPrice FROM PricebookEntry]);
+    public static Map<Id, PricebookEntry> priceBookEntriesMap2 = new Map<Id, PricebookEntry>([SELECT Id, Name, UnitPrice FROM PricebookEntry]);
 
     public static Map<Id, List<ProductPackageItem__c>> productPackageItemMap = new Map<Id, List<ProductPackageItem__c>>();
-
-
 
 
     //Fill Maps
@@ -36,6 +36,8 @@ public without sharing class OrderPriceBookAssign {
         }
     }
 
+
+    //ASSIGN PRICEBOOK TO ORDER
     public static void assignPriceBookToOrder(List<Order> orders) {
         for (Order ord : orders) {
             ord.Pricebook2Id = getPriceBookId(recordTypesByIds.get(ord.RecordTypeId));
@@ -69,15 +71,14 @@ public without sharing class OrderPriceBookAssign {
     public static void addPackageProducts(List<Order> orders) {
         buildPriceBookEntriesMap();
         buildProductPackageItemMap(getListProductPackageIds(orders));
-        System.debug('ppItems ==> ' + productPackageItemMap);
+
         List<OrderItem> oi = new List<OrderItem>();
         for (Order ord : orders) {
-            List<ProductPackageItem__c> pp = productPackageItemMap.get(ord.ProductPackage__c);
-            System.debug('pp ==> ' + pp);
-            if (ord.ProductPackage__c != null && pp != null) {
-                for(Integer i = 0; i < pp.size(); i++) {
-                    PricebookEntry pbe = priceBookEntriesMap.get(pp[i].Name);
-                    System.debug('pbe ==> ' + pbe);
+            if (ord.ProductPackage__c != null) {
+                Map<String, PricebookEntry> mapPriceBookItems = buildItemsPriceBookMap(priceBook2MapKeyId.get(getPriceBookId(recordTypesByIds.get(ord.RecordTypeId))));
+                for(ProductPackageItem__c ppi : productPackageItemMap.get(ord.ProductPackage__c)) {
+                    PricebookEntry pbe = mapPriceBookItems.get(ppi.Name);
+                    if(pbe == null) continue;
                     OrderItem oItem = new OrderItem();
                     oItem.OrderId = ord.id;
                     oItem.Quantity = 1;
@@ -90,6 +91,12 @@ public without sharing class OrderPriceBookAssign {
         insert oi;
     }
 
+    public static Map<String, PricebookEntry> buildItemsPriceBookMap(Pricebook2 pb){
+        Map<String, PricebookEntry> mapItems = new Map<String, PricebookEntry>();
+        for(PricebookEntry pbe : pb.PricebookEntries) mapItems.put(pbe.Name, pbe);
+        return mapItems;
+    }
+
     public static List<Id> getListProductPackageIds(List<Order> ords) {
         List<Id> listProductPackageId = new List<Id>();
         for (Order ord : ords) {
@@ -99,7 +106,3 @@ public without sharing class OrderPriceBookAssign {
     }
 
 }
-
-
-
-
